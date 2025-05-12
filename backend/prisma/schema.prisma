@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Comunicacao {
+  id             String @id @default(auto()) @map("_id") @db.ObjectId
+  ip             String
+  dnp            String
+  usuario        String
+  tipoModem      String
+  modeloModem    String
+  chip           String
+  serieModem     String
+  tombamentoModem String
+  wifi           String
+  ipWifi         String
+}
+
+model Consulta {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  equipamento String
+  alimentador String
+  fabricante  String
+  cidade      String
+  endereco    String
+  referencia  String
+  gps         String
+}
+
+model Inspecao {
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  tombamentoRele  String
+  serieRele       String
+  modeloRele      String
+  tombamentoChave String
+  serieChave      String
+  modeloChave     String
+  desgaste        String
+  operacoes       String
+  tp              String
+  parafusoAterramento String
+  cvt             String
+  calibracao      String
+  bateria         String
+  dataBateria     String
+  historicoBateria String
+  dataVisita      String
+  observacao      String
+}

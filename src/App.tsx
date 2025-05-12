@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import type{ EquipmentData, Equipment, Communication, Inspection } from './types/types';
+import type { EquipmentData, Equipment, Communication, Inspection } from './types/types';
 import EquipmentList from './components/EquipmentList';
 import InspectionList from './components/InspectionList';
 import CommunicationList from './components/CommunicationList';
 
 import Tabs from './components/Tabs';
+
+const API_BASE_URL = 'http://localhost:5000/api';
 
 const App = () => {
   const [data, setData] = useState<EquipmentData>({
@@ -14,118 +16,196 @@ const App = () => {
   });
   const [activeTab, setActiveTab] = useState('consulta');
 
+  // Fetch data from backend API
   useEffect(() => {
-    // Carregar dados iniciais (pode ser substituído por uma chamada API)
-    const initialData: EquipmentData = {
-      consulta: [
-        {
-          equipamento: "123590",
-          alimentador: "PGR-35",
-          fabricante: "TAVRIDA",
-          cidade: "SÃO VICENTE",
-          endereco: "SÃO JOÃO",
-          referencia: "PERTO DA ESQUINA",
-          gps: "-23.897988, -46.330598",
-        }
-      ],
-      inspeção: [
-        {
-          tombamentoRele: "4545423590",
-          serieRele: "4545423590",
-          modeloRele: "ADVC-III",
-          tombamentoChave: "4545423590",
-          serieChave: "4545423590",
-          modeloChave: "U27-12",
-          desgaste: "100%",
-          operacoes: "100",
-          tp: "SIM",
-          parafusoAterramento: "SIM",
-          cvt: "SIM",
-          calibracao: "SIM",
-          bateria: "SIM",
-          dataBateria: "15/02/2025",
-          historicoBateria: "15/02/2025",
-          dataVisita: "15/02/2025",
-          observacao: "EQUIPAMENTO EM OPERAÇÃO DIA 02/02/2025"
-        }
-      ],
-      comunicacao: [
-        {
-          ip: "10.43.125.625",
-          dnp: "12125",
-          usuario: "vivo3g12675",
-          tipoModem: "4G",
-          modeloModem: "ROBUSTEL",
-          chip: "8955-1082-2570-4678",
-          serieModem: "512047588541",
-          tombamentoModem: "12574485",
-          wifi: "SIM",
-          ipWifi: "192.168.4.1:9002"
-        }
-      ]
+    const fetchData = async () => {
+      try {
+        const [consultaRes, inspecaoRes, comunicacaoRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/consulta`),
+          fetch(`${API_BASE_URL}/inspecao`),
+          fetch(`${API_BASE_URL}/comunicacao`)
+        ]);
+        const [consultaData, inspecaoData, comunicacaoData] = await Promise.all([
+          consultaRes.json(),
+          inspecaoRes.json(),
+          comunicacaoRes.json()
+        ]);
+        setData({
+          consulta: consultaData,
+          inspeção: inspecaoData,
+          comunicacao: comunicacaoData
+        });
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
     };
-    setData(initialData);
+    fetchData();
   }, []);
 
-  const handleAddEquipment = (newEquipment: Equipment) => {
-    setData(prev => ({
-      ...prev,
-      consulta: [...prev.consulta, newEquipment]
-    }));
+  // Equipment handlers
+  const handleAddEquipment = async (newEquipment: Equipment) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/consulta`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newEquipment)
+      });
+      const savedEquipment = await res.json();
+      setData(prev => ({
+        ...prev,
+        consulta: [...prev.consulta, savedEquipment]
+      }));
+    } catch (error) {
+      console.error('Error adding equipment:', error);
+    }
   };
 
-  const handleUpdateEquipment = (updatedEquipment: Equipment, index: number) => {
-    const updatedData = {...data};
-    updatedData.consulta[index] = updatedEquipment;
-    setData(updatedData);
+  const handleUpdateEquipment = async (updatedEquipment: Equipment, index: number) => {
+    try {
+      const id = data.consulta[index]._id;
+      const res = await fetch(`${API_BASE_URL}/consulta/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedEquipment)
+      });
+      const savedEquipment = await res.json();
+      const updatedList = [...data.consulta];
+      updatedList[index] = savedEquipment;
+      setData(prev => ({
+        ...prev,
+        consulta: updatedList
+      }));
+    } catch (error) {
+      console.error('Error updating equipment:', error);
+    }
   };
 
-  const handleDeleteEquipment = (index: number) => {
-    const updatedData = {...data};
-    updatedData.consulta.splice(index, 1);
-    setData(updatedData);
+  const handleDeleteEquipment = async (index: number) => {
+    try {
+      const id = data.consulta[index]._id;
+      await fetch(`${API_BASE_URL}/consulta/${id}`, {
+        method: 'DELETE'
+      });
+      const updatedList = [...data.consulta];
+      updatedList.splice(index, 1);
+      setData(prev => ({
+        ...prev,
+        consulta: updatedList
+      }));
+    } catch (error) {
+      console.error('Error deleting equipment:', error);
+    }
   };
 
-  // Funções similares para inspeção 
-  const handleAddInspection = (newInspection: Inspection) => {
-    setData(prev => ({
-      ...prev,
-      inspeção: [...prev.inspeção, newInspection]
-    }));
+  // Inspection handlers
+  const handleAddInspection = async (newInspection: Inspection) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/inspecao`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newInspection)
+      });
+      const savedInspection = await res.json();
+      setData(prev => ({
+        ...prev,
+        inspeção: [...prev.inspeção, savedInspection]
+      }));
+    } catch (error) {
+      console.error('Error adding inspection:', error);
+    }
   };
 
-  const handleUpdateInspection = (updatedInspection: Inspection, index: number) => {
-    const updatedData = {...data};
-    updatedData.inspeção[index] = updatedInspection;
-    setData(updatedData);
+  const handleUpdateInspection = async (updatedInspection: Inspection, index: number) => {
+    try {
+      const id = data.inspeção[index]._id;
+      const res = await fetch(`${API_BASE_URL}/inspecao/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedInspection)
+      });
+      const savedInspection = await res.json();
+      const updatedList = [...data.inspeção];
+      updatedList[index] = savedInspection;
+      setData(prev => ({
+        ...prev,
+        inspeção: updatedList
+      }));
+    } catch (error) {
+      console.error('Error updating inspection:', error);
+    }
   };
 
-  const handleDeleteInspection = (index: number) => {
-    const updatedData = {...data};
-    updatedData.inspeção.splice(index, 1);
-    setData(updatedData);
+  const handleDeleteInspection = async (index: number) => {
+    try {
+      const id = data.inspeção[index]._id;
+      await fetch(`${API_BASE_URL}/inspecao/${id}`, {
+        method: 'DELETE'
+      });
+      const updatedList = [...data.inspeção];
+      updatedList.splice(index, 1);
+      setData(prev => ({
+        ...prev,
+        inspeção: updatedList
+      }));
+    } catch (error) {
+      console.error('Error deleting inspection:', error);
+    }
   };
 
-  /* Comunicação */
-   const handleAddCommunication = (newCommunication: Communication) => {
-    setData(prev => ({
-      ...prev,
-      comunicacao: [...prev.comunicacao, newCommunication]
-    }));
+  // Communication handlers
+  const handleAddCommunication = async (newCommunication: Communication) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/comunicacao`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCommunication)
+      });
+      const savedCommunication = await res.json();
+      setData(prev => ({
+        ...prev,
+        comunicacao: [...prev.comunicacao, savedCommunication]
+      }));
+    } catch (error) {
+      console.error('Error adding communication:', error);
+    }
   };
 
-  const handleUpdateCommunication = (updatedCommunication: Communication, index: number) => {
-    const updatedData = {...data};
-    updatedData.comunicacao[index] = updatedCommunication;
-    setData(updatedData);
+  const handleUpdateCommunication = async (updatedCommunication: Communication, index: number) => {
+    try {
+      const id = data.comunicacao[index]._id;
+      const res = await fetch(`${API_BASE_URL}/comunicacao/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedCommunication)
+      });
+      const savedCommunication = await res.json();
+      const updatedList = [...data.comunicacao];
+      updatedList[index] = savedCommunication;
+      setData(prev => ({
+        ...prev,
+        comunicacao: updatedList
+      }));
+    } catch (error) {
+      console.error('Error updating communication:', error);
+    }
   };
 
-  const handleDeleteCommunication = (index: number) => {
-    const updatedData = {...data};
-    updatedData.comunicacao.splice(index, 1);
-    setData(updatedData);
+  const handleDeleteCommunication = async (index: number) => {
+    try {
+      const id = data.comunicacao[index]._id;
+      await fetch(`${API_BASE_URL}/comunicacao/${id}`, {
+        method: 'DELETE'
+      });
+      const updatedList = [...data.comunicacao];
+      updatedList.splice(index, 1);
+      setData(prev => ({
+        ...prev,
+        comunicacao: updatedList
+      }));
+    } catch (error) {
+      console.error('Error deleting communication:', error);
+    }
   };
-
 
   return (
     <div className="container mx-auto p-4">
